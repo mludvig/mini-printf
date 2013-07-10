@@ -22,7 +22,7 @@ static unsigned int
 mini_strlen(const char *s)
 {
 	unsigned int len = 0;
-	while (s[len++]) /* do nothing */;
+	while (s[len] != '\0') len++;
 	return len;
 }
 
