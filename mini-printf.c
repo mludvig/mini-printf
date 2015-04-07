@@ -54,7 +54,7 @@ mini_strlen(const char *s)
 }
 
 static unsigned int
-mini_itoa(int value, unsigned int radix, unsigned int uppercase,
+mini_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int unsig,
 	 char *buffer, unsigned int zero_pad)
 {
 	char	*pbuffer = buffer;
@@ -65,7 +65,7 @@ mini_itoa(int value, unsigned int radix, unsigned int uppercase,
 	if (radix > 16)
 		return 0;
 
-	if (value < 0) {
+	if (value < 0 && !unsig) {
 		negative = 1;
 		value = -value;
 	}
@@ -156,13 +156,13 @@ mini_vsnprintf(char *buffer, unsigned int buffer_len, char *fmt, va_list va)
 
 				case 'u':
 				case 'd':
-					len = mini_itoa(va_arg(va, unsigned int), 10, 0, bf, zero_pad);
+					len = mini_itoa(va_arg(va, unsigned int), 10, 0, (ch=='u'), bf, zero_pad);
 					_puts(bf, len);
 					break;
 
 				case 'x':
 				case 'X':
-					len = mini_itoa(va_arg(va, unsigned int), 16, (ch=='X'), bf, zero_pad);
+					len = mini_itoa(va_arg(va, unsigned int), 16, (ch=='X'), 1, bf, zero_pad);
 					_puts(bf, len);
 					break;
 
