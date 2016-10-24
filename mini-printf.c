@@ -98,7 +98,7 @@ mini_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int un
 }
 
 int
-mini_vsnprintf(char *buffer, unsigned int buffer_len, char *fmt, va_list va)
+mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list va)
 {
 	char *pbuffer = buffer;
 	char bf[24];
@@ -187,7 +187,7 @@ end:
 
 
 int
-mini_snprintf(char* buffer, unsigned int buffer_len, char *fmt, ...)
+mini_snprintf(char* buffer, unsigned int buffer_len, const char *fmt, ...)
 {
 	int ret;
 	va_list va;
