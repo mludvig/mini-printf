@@ -100,7 +100,8 @@ struct mini_buff {
 	unsigned int buffer_len;
 };
 
-static int local_putc(int ch, struct mini_buff *b)
+static int
+_putc(int ch, struct mini_buff *b)
 {
 	if ((unsigned int)((b->pbuffer - b->buffer) + 1) >= b->buffer_len)
 		return 0;
@@ -109,7 +110,8 @@ static int local_putc(int ch, struct mini_buff *b)
 	return 1;
 }
 
-static int local_puts(char *s, unsigned int len, struct mini_buff *b)
+static int
+_puts(char *s, unsigned int len, struct mini_buff *b)
 {
 	unsigned int i;
 
@@ -130,8 +132,7 @@ mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list v
 	struct mini_buff b;
 	char bf[24];
 	char ch;
-#define _putc(ch) local_putc(ch, &b)
-#define _puts(s, len) local_puts(s, len, &b)
+
 	b.buffer = buffer;
 	b.pbuffer = buffer;
 	b.buffer_len = buffer_len;
@@ -140,7 +141,7 @@ mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list v
 		if ((unsigned int)((b.pbuffer - b.buffer) + 1) >= b.buffer_len)
 			break;
 		if (ch!='%')
-			_putc(ch);
+			_putc(ch, &b);
 		else {
 			char zero_pad = 0;
 			char *ptr;
@@ -165,26 +166,26 @@ mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list v
 				case 'u':
 				case 'd':
 					len = mini_itoa(va_arg(va, unsigned int), 10, 0, (ch=='u'), bf, zero_pad);
-					_puts(bf, len);
+					_puts(bf, len, &b);
 					break;
 
 				case 'x':
 				case 'X':
 					len = mini_itoa(va_arg(va, unsigned int), 16, (ch=='X'), 1, bf, zero_pad);
-					_puts(bf, len);
+					_puts(bf, len, &b);
 					break;
 
 				case 'c' :
-					_putc((char)(va_arg(va, int)));
+					_putc((char)(va_arg(va, int)), &b);
 					break;
 
 				case 's' :
 					ptr = va_arg(va, char*);
-					_puts(ptr, mini_strlen(ptr));
+					_puts(ptr, mini_strlen(ptr), &b);
 					break;
 
 				default:
-					_putc(ch);
+					_putc(ch, &b);
 					break;
 			}
 		}
