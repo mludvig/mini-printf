@@ -15,3 +15,7 @@
 *.exe
 *.out
 *.app
+
+# Testsuite files
+test1
+test1.out

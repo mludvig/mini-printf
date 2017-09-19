@@ -4,7 +4,7 @@ CFLAGS = --std=c99 -O2 -pedantic -Wall -Wextra -Wshadow
 	cmp $^
 	@echo PASS
 
-all: test1_check
+all test: test1_check
 
 test1: mini-printf.o
 
