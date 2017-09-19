@@ -41,8 +41,6 @@
  *
  */
 
-#include <string.h>
-#include <stdarg.h>
 #include "mini-printf.h"
 
 static unsigned int
@@ -97,42 +95,53 @@ mini_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int un
 	return len;
 }
 
+struct mini_buff {
+	char *buffer, *pbuffer;
+	unsigned int buffer_len;
+};
+
+static int
+_putc(int ch, struct mini_buff *b)
+{
+	if ((unsigned int)((b->pbuffer - b->buffer) + 1) >= b->buffer_len)
+		return 0;
+	*(b->pbuffer++) = ch;
+	*(b->pbuffer) = '\0';
+	return 1;
+}
+
+static int
+_puts(char *s, unsigned int len, struct mini_buff *b)
+{
+	unsigned int i;
+
+	if (b->buffer_len - (b->pbuffer - b->buffer) - 1 < len)
+		len = b->buffer_len - (b->pbuffer - b->buffer) - 1;
+
+	/* Copy to buffer */
+	for (i = 0; i < len; i++)
+		*(b->pbuffer++) = s[i];
+	*(b->pbuffer) = '\0';
+
+	return len;
+}
+
 int
 mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list va)
 {
-	char *pbuffer = buffer;
+	struct mini_buff b;
 	char bf[24];
 	char ch;
 
-	int _putc(char ch)
-	{
-		if ((unsigned int)((pbuffer - buffer) + 1) >= buffer_len)
-			return 0;
-		*(pbuffer++) = ch;
-		*(pbuffer) = '\0';
-		return 1;
-	}
-
-	int _puts(char *s, unsigned int len)
-	{
-		unsigned int i;
-
-		if (buffer_len - (pbuffer - buffer) - 1 < len)
-			len = buffer_len - (pbuffer - buffer) - 1;
-
-		/* Copy to buffer */
-		for (i = 0; i < len; i++)
-			*(pbuffer++) = s[i];
-		*(pbuffer) = '\0';
-
-		return len;
-	}
+	b.buffer = buffer;
+	b.pbuffer = buffer;
+	b.buffer_len = buffer_len;
 
 	while ((ch=*(fmt++))) {
-		if ((unsigned int)((pbuffer - buffer) + 1) >= buffer_len)
+		if ((unsigned int)((b.pbuffer - b.buffer) + 1) >= b.buffer_len)
 			break;
 		if (ch!='%')
-			_putc(ch);
+			_putc(ch, &b);
 		else {
 			char zero_pad = 0;
 			char *ptr;
@@ -157,32 +166,32 @@ mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list v
 				case 'u':
 				case 'd':
 					len = mini_itoa(va_arg(va, unsigned int), 10, 0, (ch=='u'), bf, zero_pad);
-					_puts(bf, len);
+					_puts(bf, len, &b);
 					break;
 
 				case 'x':
 				case 'X':
 					len = mini_itoa(va_arg(va, unsigned int), 16, (ch=='X'), 1, bf, zero_pad);
-					_puts(bf, len);
+					_puts(bf, len, &b);
 					break;
 
 				case 'c' :
-					_putc((char)(va_arg(va, int)));
+					_putc((char)(va_arg(va, int)), &b);
 					break;
 
 				case 's' :
 					ptr = va_arg(va, char*);
-					_puts(ptr, mini_strlen(ptr));
+					_puts(ptr, mini_strlen(ptr), &b);
 					break;
 
 				default:
-					_putc(ch);
+					_putc(ch, &b);
 					break;
 			}
 		}
 	}
 end:
-	return pbuffer - buffer;
+	return b.pbuffer - b.buffer;
 }
 
 
