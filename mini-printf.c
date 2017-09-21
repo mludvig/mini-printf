@@ -55,9 +55,9 @@ static unsigned int
 mini_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int unsig,
 	 char *buffer, unsigned int zero_pad, unsigned int width)
 {
-	char	*pbuffer = buffer;
-	int	negative = 0;
-	unsigned int	i, len;
+	char *pbuffer = buffer;
+	int negative = 0;
+	unsigned int i, len;
 
 	/* No support for unusual radixes. */
 	if (radix > 16)
