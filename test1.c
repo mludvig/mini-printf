@@ -1,24 +1,27 @@
 #include <stdio.h>
+#ifndef _LIBC_REVERT
 #include "mini-printf.h"
+#define snprintf mini_snprintf
+#endif
 
 int main(void)
 {
 	char buff[30];
-	mini_snprintf(buff, sizeof buff, "testing %d %d %07d", 1, 2, 3);
+	snprintf(buff, sizeof buff, "testing %d %d %07d", 1, 2, 3);
 	puts(buff);
-	mini_snprintf(buff, sizeof buff, "faster %s %ccheaper%c", "and", 34, 34);
+	snprintf(buff, sizeof buff, "faster %s %ccheaper%c", "and", 34, 34);
 	puts(buff);
-	mini_snprintf(buff, sizeof buff, "%x %% %X", 0xdeadf00d, 0xdeadf00d);
+	snprintf(buff, sizeof buff, "%x %% %X", 0xdeadf00d, 0xdeadf00d);
 	puts(buff);
-	mini_snprintf(buff, sizeof buff, "%09d%09d%09d%09d%09d", 1, 2, 3, 4, 5);
+	snprintf(buff, sizeof buff, "%09d%09d%09d%09d%09d", 1, 2, 3, 4, 5);
 	puts(buff);
-	mini_snprintf(buff, sizeof buff, "%d %u %d %u", 50, 50, -50, -50);
+	snprintf(buff, sizeof buff, "%d %u %d %u", 50, 50, -50, -50);
 	puts(buff);
-	mini_snprintf(buff, sizeof buff, "(%6d) (%12d)", 78, 78);
+	snprintf(buff, sizeof buff, "(%6d) (%12d)", 78, 78);
 	puts(buff);
-	mini_snprintf(buff, sizeof buff, "(%s) (%12s) (%s)", "a", "b", "xcccccccccccccccx");
+	snprintf(buff, sizeof buff, "(%s) (%12s) (%s)", "a", "b", "xcccccccccccccccx");
 	puts(buff);
-	mini_snprintf(buff, sizeof buff, "(%s)", "xcccccccccccccccx");
+	snprintf(buff, sizeof buff, "(%s)", "xcccccccccccccccx");
 	puts(buff);
 	return 0;
 }
