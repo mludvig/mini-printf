@@ -14,5 +14,11 @@ int main(void)
 	puts(buff);
 	mini_snprintf(buff, sizeof buff, "%d %u %d %u", 50, 50, -50, -50);
 	puts(buff);
+	mini_snprintf(buff, sizeof buff, "(%6d) (%12d)", 78, 78);
+	puts(buff);
+	mini_snprintf(buff, sizeof buff, "(%s) (%12s) (%s)", "a", "b", "xcccccccccccccccx");
+	puts(buff);
+	mini_snprintf(buff, sizeof buff, "(%s)", "xcccccccccccccccx");
+	puts(buff);
 	return 0;
 }
