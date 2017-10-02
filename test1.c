@@ -14,5 +14,17 @@ int main(void)
 	puts(buff);
 	mini_snprintf(buff, sizeof buff, "%d %u %d %u", 50, 50, -50, -50);
 	puts(buff);
+	mini_snprintf(buff, sizeof buff, "%0");
+	puts(buff);
+	mini_snprintf(buff, sizeof buff, "a%0");
+	puts(buff);
+	mini_snprintf(buff, sizeof buff, "%");
+	puts(buff);
+	mini_snprintf(buff, sizeof buff, "b%");
+	puts(buff);
+	mini_snprintf(buff, 0, "%s", "hello");
+	puts(buff);
+	mini_snprintf(buff, sizeof buff, "");
+	puts(buff);
 	return 0;
 }
