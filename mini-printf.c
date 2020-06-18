@@ -140,6 +140,8 @@ mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list v
 	b.pbuffer = buffer;
 	b.buffer_len = buffer_len;
 
+	if (buffer_len > 0) *buffer = 0;
+
 	while ((ch=*(fmt++))) {
 		if ((unsigned int)((b.pbuffer - b.buffer) + 1) >= b.buffer_len)
 			break;
