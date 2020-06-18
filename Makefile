@@ -1,4 +1,6 @@
 CFLAGS = --std=c99 -O2 -pedantic -Wall -Wextra -Wshadow
+CFLAGS += -Wstrict-prototypes -Wmissing-prototypes -Wundef
+CFLAGS += -Wpointer-arith -Wcast-align -Wcast-qual -Wredundant-decls
 
 %_check: %.out %.gold
 	cmp $^
