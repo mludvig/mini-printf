@@ -169,6 +169,8 @@ mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list v
 					_puts(bf, len, &b);
 					break;
 
+				case 'p':
+					zero_pad = 2 * sizeof(void*);
 				case 'x':
 				case 'X':
 					len = mini_itoa(va_arg(va, unsigned int), 16, (ch=='X'), 1, bf, zero_pad);
