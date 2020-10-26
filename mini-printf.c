@@ -43,21 +43,21 @@
 
 #include "mini-printf.h"
 
-static unsigned int
+static int
 mini_strlen(const char *s)
 {
-	unsigned int len = 0;
+	int len = 0;
 	while (s[len] != '\0') len++;
 	return len;
 }
 
-static unsigned int
-mini_itoa(long value, unsigned int radix, unsigned int uppercase, unsigned int unsig,
+static int
+mini_itoa(long value, unsigned int radix, int uppercase, int unsig,
 	 char *buffer)
 {
 	char	*pbuffer = buffer;
 	int	negative = 0;
-	unsigned int	i, len;
+	int	i, len;
 
 	/* No support for unusual radixes. */
 	if (radix > 16)
@@ -92,8 +92,8 @@ mini_itoa(long value, unsigned int radix, unsigned int uppercase, unsigned int u
 	return len;
 }
 
-static unsigned int
-mini_pad(char* ptr, unsigned int len, char pad_char, unsigned int pad_to, char *buffer)
+static int
+mini_pad(char* ptr, int len, char pad_char, int pad_to, char *buffer)
 {
 	int i;
 	int overflow = 0;
@@ -124,12 +124,12 @@ struct mini_buff {
 };
 
 static int
-_puts(char *s, unsigned int len, void *buf)
+_puts(char *s, int len, void *buf)
 {
 	if(!buf) return len;
 	struct mini_buff *b = buf;
 	char * p0 = b->buffer;
-	unsigned int i;
+	int i;
 	/* Copy to buffer */
 	for (i = 0; i < len; i++) {
 		if(b->pbuffer == b->buffer + b->buffer_len - 1) {
@@ -173,7 +173,7 @@ mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list v
 }
 
 int
-mini_vpprintf(int (*puts)(char* s, unsigned int len, void* buf), void* buf, const char *fmt, va_list va)
+mini_vpprintf(int (*puts)(char* s, int len, void* buf), void* buf, const char *fmt, va_list va)
 {
 	char bf[24];
 	char bf2[24];
@@ -185,15 +185,15 @@ mini_vpprintf(int (*puts)(char* s, unsigned int len, void* buf), void* buf, cons
 		/* run puts in counting mode. */
 		puts = _puts; buf = (void*)0;
 	}
-	unsigned int n = 0;
+	int n = 0;
 	while ((ch=*(fmt++))) {
-		unsigned int len;
+		int len;
 		if (ch!='%') {
 			len = 1;
 			len = puts(&ch, len, buf);
 		} else {
 			char pad_char = ' ';
-			unsigned int pad_to = 0;
+			int pad_to = 0;
 			char l = 0;
 			char *ptr;
 
@@ -205,7 +205,7 @@ mini_vpprintf(int (*puts)(char* s, unsigned int len, void* buf), void* buf, cons
 				pad_to = pad_to * 10 + (ch - '0');
 				ch=*(fmt++);
 			}
-			if(pad_to > sizeof(bf)) {
+			if(pad_to > (signed int) sizeof(bf)) {
 				pad_to = sizeof(bf);
 			}
 			if (ch == 'l') {
@@ -298,7 +298,7 @@ mini_snprintf(char* buffer, unsigned int buffer_len, const char *fmt, ...)
 }
 
 int
-mini_pprintf(int (*puts)(char*s, unsigned int len, void* buf), void* buf, const char *fmt, ...)
+mini_pprintf(int (*puts)(char*s, int len, void* buf), void* buf, const char *fmt, ...)
 {
 	int ret;
 	va_list va;

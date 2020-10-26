@@ -60,8 +60,8 @@ int mini_snprintf(char* buffer, unsigned int buffer_len, const char *fmt, ...);
  * If puts is NULL, number of bytes to be written.
  * puts shall return number of bytes written.
  */
-int mini_vpprintf(int (*puts)(char* s, unsigned int len, void* buf), void* buf, const char *fmt, va_list va);
-int mini_pprintf(int (*puts)(char*s, unsigned int len, void* buf), void* buf, const char *fmt, ...);
+int mini_vpprintf(int (*puts)(char* s, int len, void* buf), void* buf, const char *fmt, va_list va);
+int mini_pprintf(int (*puts)(char*s, int len, void* buf), void* buf, const char *fmt, ...);
 
 #ifdef __cplusplus
 }
