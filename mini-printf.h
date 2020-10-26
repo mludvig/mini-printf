@@ -37,8 +37,31 @@ extern "C" {
 
 #include <stdarg.h>
 
+#ifdef MINI_PRINTF_ENABLE_OBJECTS
+/* If enabled, callback for object types (O and R).
+ * void* arguments matching %O and %R are sent to handler as obj.
+ * the result string created by handler at *buf is freed by freeor.
+ * */
+void mini_printf_set_handler(
+	void * data,
+	/* handler returns number of chars in *buf; *buf is not NUL-terminated. */
+	int (*handler)(void* data, void* obj, int ch, int len_hint, char** buf),
+	void (*freeor)(void* data, void* buf));
+#endif
+
+/* String IO interface; returns number of bytes written, not including the ending NUL.
+ * Always appends a NUL at the end, therefore buffer_len shall be at least 1 in normal operation.
+ * If buffer is NULL or buffer_len is 0, returns number of bytes to be written, not including the ending NUL.
+ */
 int mini_vsnprintf(char* buffer, unsigned int buffer_len, const char *fmt, va_list va);
 int mini_snprintf(char* buffer, unsigned int buffer_len, const char *fmt, ...);
+
+/* Stream IO interface; returns number of bytes written.
+ * If puts is NULL, number of bytes to be written.
+ * puts shall return number of bytes written.
+ */
+int mini_vpprintf(int (*puts)(char* s, unsigned int len, void* buf), void* buf, const char *fmt, va_list va);
+int mini_pprintf(int (*puts)(char*s, unsigned int len, void* buf), void* buf, const char *fmt, ...);
 
 #ifdef __cplusplus
 }

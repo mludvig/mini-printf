@@ -1,4 +1,4 @@
-CFLAGS = --std=c99 -O2 -pedantic -Wall -Wextra -Wshadow
+CFLAGS = --std=c99 -O2 -pedantic -Wall -Wextra -Wshadow -DMINI_PRINTF_ENABLE_OBJECTS
 
 %_check: %.out %.gold
 	cmp $^
