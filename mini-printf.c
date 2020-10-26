@@ -43,21 +43,21 @@
 
 #include "mini-printf.h"
 
-static unsigned int
+static int
 mini_strlen(const char *s)
 {
-	unsigned int len = 0;
+	int len = 0;
 	while (s[len] != '\0') len++;
 	return len;
 }
 
-static unsigned int
-mini_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int unsig,
-	 char *buffer, unsigned int zero_pad)
+static int
+mini_itoa(long value, unsigned int radix, int uppercase, int unsig,
+	 char *buffer)
 {
 	char	*pbuffer = buffer;
 	int	negative = 0;
-	unsigned int	i, len;
+	int	i, len;
 
 	/* No support for unusual radixes. */
 	if (radix > 16)
@@ -74,9 +74,6 @@ mini_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int un
 		*(pbuffer++) = (digit < 10 ? '0' + digit : (uppercase ? 'A' : 'a') + digit - 10);
 		value /= radix;
 	} while (value > 0);
-
-	for (i = (pbuffer - buffer); i < zero_pad; i++)
-		*(pbuffer++) = '0';
 
 	if (negative)
 		*(pbuffer++) = '-';
@@ -95,103 +92,196 @@ mini_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int un
 	return len;
 }
 
+static int
+mini_pad(char* ptr, int len, char pad_char, int pad_to, char *buffer)
+{
+	int i;
+	int overflow = 0;
+	char * pbuffer = buffer;
+	if(pad_to == 0) pad_to = len;
+	if(len > pad_to) {
+		len = pad_to;
+		overflow = 1;
+	}
+	for(i = pad_to - len; i > 0; i --) {
+		*(pbuffer++) = pad_char;
+	}
+	for(i = len; i > 0; i --) {
+		*(pbuffer++) = *(ptr++);
+	}
+	len = pbuffer - buffer;
+	if(overflow) {
+		for (i = 0; i < 3 && pbuffer > buffer; i ++) {
+			*(pbuffer-- - 1) = '*';
+		}
+	}
+	return len;
+}
+
 struct mini_buff {
 	char *buffer, *pbuffer;
 	unsigned int buffer_len;
 };
 
 static int
-_putc(int ch, struct mini_buff *b)
+_puts(char *s, int len, void *buf)
 {
-	if ((unsigned int)((b->pbuffer - b->buffer) + 1) >= b->buffer_len)
-		return 0;
-	*(b->pbuffer++) = ch;
-	*(b->pbuffer) = '\0';
-	return 1;
-}
-
-static int
-_puts(char *s, unsigned int len, struct mini_buff *b)
-{
-	unsigned int i;
-
-	if (b->buffer_len - (b->pbuffer - b->buffer) - 1 < len)
-		len = b->buffer_len - (b->pbuffer - b->buffer) - 1;
-
+	if(!buf) return len;
+	struct mini_buff *b = buf;
+	char * p0 = b->buffer;
+	int i;
 	/* Copy to buffer */
-	for (i = 0; i < len; i++)
-		*(b->pbuffer++) = s[i];
-	*(b->pbuffer) = '\0';
-
-	return len;
+	for (i = 0; i < len; i++) {
+		if(b->pbuffer == b->buffer + b->buffer_len - 1) {
+			break;
+		}
+		*(b->pbuffer ++) = s[i];
+	}
+	*(b->pbuffer) = 0;
+	return b->pbuffer - p0;
 }
+
+#ifdef MINI_PRINTF_ENABLE_OBJECTS
+static int (*mini_handler) (void* data, void* obj, int ch, int lhint, char** bf) = 0;
+static void (*mini_handler_freeor)(void* data, void*) = 0;
+static void * mini_handler_data = 0;
+
+void mini_printf_set_handler(
+	void* data,
+	int (*handler)(void* data, void* obj, int ch, int len_hint, char** buf),
+	void (*freeor)(void* data, void* buf))
+{
+	mini_handler = handler;
+	mini_handler_freeor = freeor;
+	mini_handler_data = data;
+}
+#endif
 
 int
 mini_vsnprintf(char *buffer, unsigned int buffer_len, const char *fmt, va_list va)
 {
 	struct mini_buff b;
-	char bf[24];
-	char ch;
-
 	b.buffer = buffer;
 	b.pbuffer = buffer;
 	b.buffer_len = buffer_len;
+	if(buffer_len == 0) buffer = (void*) 0;
+	int n = mini_vpprintf(_puts, (buffer != (void*)0)?&b:(void*)0, fmt, va);
+	if(buffer == (void*) 0) {
+		return n;
+	}
+	return b.pbuffer - b.buffer;
+}
 
+int
+mini_vpprintf(int (*puts)(char* s, int len, void* buf), void* buf, const char *fmt, va_list va)
+{
+	char bf[24];
+	char bf2[24];
+	char ch;
+#ifdef MINI_PRINTF_ENABLE_OBJECTS
+	void* obj;
+#endif
+	if(puts == (void*)0) {
+		/* run puts in counting mode. */
+		puts = _puts; buf = (void*)0;
+	}
+	int n = 0;
 	while ((ch=*(fmt++))) {
-		if ((unsigned int)((b.pbuffer - b.buffer) + 1) >= b.buffer_len)
-			break;
-		if (ch!='%')
-			_putc(ch, &b);
-		else {
-			char zero_pad = 0;
+		int len;
+		if (ch!='%') {
+			len = 1;
+			len = puts(&ch, len, buf);
+		} else {
+			char pad_char = ' ';
+			int pad_to = 0;
+			char l = 0;
 			char *ptr;
-			unsigned int len;
 
 			ch=*(fmt++);
 
 			/* Zero padding requested */
-			if (ch=='0') {
+			if (ch == '0') pad_char = '0';
+			while (ch >= '0' && ch <= '9') {
+				pad_to = pad_to * 10 + (ch - '0');
 				ch=*(fmt++);
-				if (ch == '\0')
-					goto end;
-				if (ch >= '0' && ch <= '9')
-					zero_pad = ch - '0';
+			}
+			if(pad_to > (signed int) sizeof(bf)) {
+				pad_to = sizeof(bf);
+			}
+			if (ch == 'l') {
+				l = 1;
 				ch=*(fmt++);
 			}
 
 			switch (ch) {
 				case 0:
 					goto end;
-
 				case 'u':
 				case 'd':
-					len = mini_itoa(va_arg(va, unsigned int), 10, 0, (ch=='u'), bf, zero_pad);
-					_puts(bf, len, &b);
+					if(l) {
+						len = mini_itoa(va_arg(va, unsigned long), 10, 0, (ch=='u'), bf2);
+					} else {
+						if(ch == 'u') {
+							len = mini_itoa((unsigned long) va_arg(va, unsigned int), 10, 0, 1, bf2);
+						} else {
+							len = mini_itoa((long) va_arg(va, int), 10, 0, 0, bf2);
+						}
+					}
+					len = mini_pad(bf2, len, pad_char, pad_to, bf);
+					len = puts(bf, len, buf);
 					break;
 
 				case 'x':
 				case 'X':
-					len = mini_itoa(va_arg(va, unsigned int), 16, (ch=='X'), 1, bf, zero_pad);
-					_puts(bf, len, &b);
+					if(l) {
+						len = mini_itoa(va_arg(va, unsigned long), 16, (ch=='X'), 1, bf2);
+					} else {
+						len = mini_itoa((unsigned long) va_arg(va, unsigned int), 16, (ch=='X'), 1, bf2);
+					}
+					len = mini_pad(bf2, len, pad_char, pad_to, bf);
+					len = puts(bf, len, buf);
 					break;
 
 				case 'c' :
-					_putc((char)(va_arg(va, int)), &b);
+					ch = (char)(va_arg(va, int));
+					len = mini_pad(&ch, 1, pad_char, pad_to, bf);
+					len = puts(bf, len, buf);
 					break;
 
 				case 's' :
 					ptr = va_arg(va, char*);
-					_puts(ptr, mini_strlen(ptr), &b);
+					len = mini_strlen(ptr);
+					if (pad_to > 0) {
+						len = mini_pad(ptr, len, pad_char, pad_to, bf);
+						len = puts(bf, len, buf);
+					} else {
+						len = puts(ptr, len, buf);
+					}
 					break;
-
+#ifdef MINI_PRINTF_ENABLE_OBJECTS
+				case 'O' :  /* Object by content (e.g. str) */
+				case 'R' :  /* Object by representation (e.g. repr)*/
+					obj = va_arg(va, void*);
+					len = mini_handler(mini_handler_data, obj, ch, pad_to, &ptr);
+					if (pad_to > 0) {
+						len = mini_pad(ptr, len, pad_char, pad_to, bf);
+						len = puts(bf, len, buf);
+					} else {
+						len = puts(ptr, len, buf);
+					}
+					mini_handler_freeor(mini_handler_data, ptr);
+					break;
+#endif
 				default:
-					_putc(ch, &b);
+					len = 1;
+					len = puts(&ch, len, buf);
 					break;
 			}
 		}
+		n = n + len;
 	}
 end:
-	return b.pbuffer - b.buffer;
+	return n;
 }
 
 
@@ -206,3 +296,16 @@ mini_snprintf(char* buffer, unsigned int buffer_len, const char *fmt, ...)
 
 	return ret;
 }
+
+int
+mini_pprintf(int (*puts)(char*s, int len, void* buf), void* buf, const char *fmt, ...)
+{
+	int ret;
+	va_list va;
+	va_start(va, fmt);
+	ret = mini_vpprintf(puts, buf, fmt, va);
+	va_end(va);
+
+	return ret;
+}
+
