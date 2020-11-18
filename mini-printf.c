@@ -231,6 +231,8 @@ mini_vpprintf(int (*puts)(char* s, int len, void* buf), void* buf, const char *f
 					len = puts(bf, len, buf);
 					break;
 
+				case 'p':
+					zero_pad = 2 * sizeof(void*);
 				case 'x':
 				case 'X':
 					if(l) {
